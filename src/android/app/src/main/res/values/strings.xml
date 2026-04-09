@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Çapulcu</string>
+    <string name="status_ready">Çapulcu hazır...</string>
+    <string name="status_listening">Dinliyorum...</string>
+    <string name="status_thinking">Düşünüyorum...</string>
+    <string name="status_speaking">Konuşuyorum...</string>
+</resources>
