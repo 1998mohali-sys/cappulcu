@@ -8,34 +8,99 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Set up JDK 17
       uses: actions/setup-java@v4
       with:
         java-version: '17'
         distribution: 'temurin'
-        
-    - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
-      
-    - name: Create Android project if missing
+
+    - name: Create Android project
       run: |
-        if [ ! -f "src/android/gradlew" ]; then
-          mkdir -p src/android
-          cd src/android
-          gradle init --type basic
-          yes | sdkmanager "platforms;android-34" "build-tools;34.0.0"
-        fi
-        
+        mkdir -p src/android/app/src/main/java/com/cappulcu
+        mkdir -p src/android/app/src/main/res/layout
+        mkdir -p src/android/app/src/main/res/values
+
+        cat > src/android/settings.gradle << 'EOF'
+        rootProject.name = "Cappulcu"
+        include ':app'
+        EOF
+
+        cat > src/android/build.gradle << 'EOF'
+        buildscript {
+            repositories { google(); mavenCentral() }
+            dependencies {
+                classpath 'com.android.tools.build:gradle:8.1.0'
+            }
+        }
+        allprojects {
+            repositories { google(); mavenCentral() }
+        }
+        EOF
+
+        cat > src/android/app/build.gradle << 'EOF'
+        plugins {
+            id 'com.android.application'
+        }
+        android {
+            compileSdk 34
+            defaultConfig {
+                applicationId "com.cappulcu"
+                minSdk 21
+                targetSdk 34
+                versionCode 1
+                versionName "1.0"
+            }
+        }
+        EOF
+
+        cat > src/android/app/src/main/AndroidManifest.xml << 'EOF'
+        <?xml version="1.0" encoding="utf-8"?>
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+            <application android:label="Cappulcu" android:theme="@style/AppTheme">
+                <activity android:name=".MainActivity" android:exported="true">
+                    <intent-filter>
+                        <action android:name="android.intent.action.MAIN"/>
+                        <category android:name="android.intent.category.LAUNCHER"/>
+                    </intent-filter>
+                </activity>
+            </application>
+        </manifest>
+        EOF
+
+        cat > src/android/app/src/main/java/com/cappulcu/MainActivity.java << 'EOF'
+        package com.cappulcu;
+        import android.app.Activity;
+        import android.os.Bundle;
+        public class MainActivity extends Activity {
+            @Override
+            protected void onCreate(Bundle savedInstanceState) {
+                super.onCreate(savedInstanceState);
+            }
+        }
+        EOF
+
+        cat > src/android/app/src/main/res/values/styles.xml << 'EOF'
+        <?xml version="1.0" encoding="utf-8"?>
+        <resources>
+            <style name="AppTheme" parent="android:Theme.Material.Light"/>
+        </resources>
+        EOF
+
+    - name: Setup Gradle wrapper
+      working-directory: src/android
+      run: |
+        gradle wrapper --gradle-version=8.1
+
     - name: Build APK
-      working-directory: ./src/android
+      working-directory: src/android
       run: |
         chmod +x gradlew
         ./gradlew assembleDebug
-        
+
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
